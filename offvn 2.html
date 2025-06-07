@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Notification Creator</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+        <style>
+        body {
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container mt-5">
+ <h2 class="mb-4">ALERT DYLIB MAKER</h2>
+ <hr>
+    <form id="notificationForm">
+        <div class="form-group">
+            <label for="alertIcon">Alert Icon Link (Ex: abc.com/abc.png):</label>
+            <input type="text" class="form-control" id="alertIcon" required>
+        </div>
+        <div class="form-group">
+            <label for="alertTitle">Alert Title (Ex: Demo Alert):</label>
+            <input type="text" class="form-control" id="alertTitle" required>
+        </div>
+        <div class="form-group">
+            <label for="alertDescription">Alert Description(Ex: This is demo):</label>
+            <textarea class="form-control" id="alertDescription" rows="3" required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="alertBtnLink">Alert Button Link:</label>
+            <div id="btnContainer">
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" placeholder="Button Name" required>
+                    <input type="text" class="form-control" placeholder="Button Link" required>
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" onclick="addButton()">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="saveNotification()">Create Notification</button>
+    </form>
+
+</div>
+
+    <div class="fixed-top ">
+        <span class="badge badge-light text-dark">Donate: MBBank 999923052004</span>
+        <span class="badge badge-light text-dark">By: <a href="https://t.me/x2nios">X2NIOS</a></span>
+    </div>
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+<script>
+    let buttonCount = 1;
+
+    function addButton() {
+        if (buttonCount < 4) {
+            buttonCount++;
+            let btnContainer = document.getElementById('btnContainer');
+            let newInputGroup = document.createElement('div');
+            newInputGroup.className = 'input-group mb-3';
+            newInputGroup.innerHTML = `
+                <input type="text" class="form-control" placeholder="Button Name" required>
+                <input type="text" class="form-control" placeholder="Button Link" required>
+            `;
+            btnContainer.appendChild(newInputGroup);
+        }
+    }
+
+    function btoaUnicode(str) {
+        return btoa(unescape(encodeURIComponent(str)));
+    }
+
+    function saveNotification() {
+        let alertIcon = document.getElementById('alertIcon').value;
+        let alertTitle = document.getElementById('alertTitle').value;
+        let alertDescription = document.getElementById('alertDescription').value;
+
+        // Check if any input field is empty
+        if (!alertIcon.trim() || !alertTitle.trim() || !alertDescription.trim()) {
+            Swal.fire('Error!', 'Alert Icon, Title and Alert Description cannot be empty.', 'error');
+            return;
+        }
+
+        let encodedIcon = btoaUnicode(alertIcon);
+        let encodedTitle = btoaUnicode(alertTitle);
+        let encodedDescription = btoaUnicode(alertDescription);
+
+        let buttons = [];
+        let btnInputs = document.querySelectorAll('#btnContainer input');
+        btnInputs.forEach((input, index) => {
+            if (index % 2 === 0) {
+                let buttonName = input.value.trim();
+                let buttonLink = btnInputs[index + 1].value.trim();
+
+                if (buttonName && buttonLink) {
+                    buttons.push({
+                        name: btoaUnicode(buttonName),
+                        link: btoaUnicode(buttonLink)
+                    });
+                }
+            }
+        });
+
+        if (buttons.length === 0) {
+            Swal.fire('Error!', 'At least one button should be added with both name and link.', 'error');
+            return;
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: 'save_notification.php',
+            data: {
+                icon: encodedIcon,
+                title: encodedTitle,
+                description: encodedDescription,
+                buttons: JSON.stringify(buttons)
+            },
+            success: function (response) {
+                try {
+                    let responseData = JSON.parse(response);
+                    if (responseData.token) {
+                        let successMessage = 'Your notification has been created successfully.';
+                        let downloadLink = '<a class="btn btn-success" href="' + responseData.downloadLink + '" download>Download dylib file</a>';
+                        Swal.fire('Notification Created!', successMessage + '<hr>' + downloadLink, 'success');
+                    } else {
+                        Swal.fire('Error!', responseData.error || 'An unknown error occurred.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error parsing JSON response:', error);
+                    Swal.fire('Error!', 'An error occurred while processing the server response.', 'error');
+                }
+            },
+            error: function (error) {
+                console.error('AJAX Error:', error);
+                Swal.fire('Error!', 'An error occurred while creating the notification.', 'error');
+            }
+        });
+    }
+</script>
+
+
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'8da0bd6e9fe3dd67',t:'MTczMDE3OTQ3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
