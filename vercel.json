@@ -1,9 +1,0 @@
-{
-  "version": 2,
-  "builds": [
-    { "src": "api/save_notification.js", "use": "@vercel/node" }
-  ],
-  "routes": [
-    { "src": "/api/save_notification", "dest": "api/save_notification.js" }
-  ]
-}
